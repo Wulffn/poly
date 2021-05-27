@@ -8,6 +8,7 @@ import dk.ckmwn.contract.ArticleManagement;
 import dk.ckmwn.dto.Article;
 import org.bson.BsonDocument;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.neo4j.driver.Driver;
 
 import static com.mongodb.client.model.Filters.eq;
@@ -39,7 +40,7 @@ public class ArticleManagementImpl implements ArticleManagement {
         if(id != null) {
             Article article = getArticle(id);
             if(article == null) return false;
-            DeleteResult res = articles.deleteOne(eq("_id", id));
+            DeleteResult res = articles.deleteOne(eq("_id", new ObjectId(id)));
             if(res.getDeletedCount() == 1) {
                 //Neo
                 return true;
@@ -51,7 +52,10 @@ public class ArticleManagementImpl implements ArticleManagement {
     @Override
     public Article getArticle(String id) {
         if(id != null) {
-            return Article.fromDoc(articles.find(eq("_id", id)).first());
+            Document document = articles.find(eq("_id", new ObjectId(id))).first();
+            Article article = Article.fromDoc(document);
+            //return Article.fromDoc(articles.find(eq("_id", id)).first());
+            return article;
         }
         return null;
     }

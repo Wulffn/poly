@@ -20,6 +20,6 @@ f
 T
 $src/test/java/dk/ckmwn/TestBase.java,a/4/a45e536141b22454f8e5a8997ce26665aaab73a6
 f
-6src/test/java/dk/ckmwn/impl/ArticleManagementTest.java,1/e/1ec861a47b92958b53903963f5d511266c3b9318
+6src/test/java/dk/ckmwn/impl/ArticleManagementTest.java,1\e\1ec861a47b92958b53903963f5d511266c3b9318
 f
 6src/main/java/dk/ckmwn/impl/ArticleManagementImpl.java,6/9/690fe0de3ba8b62e101e6354f22c0b428b29847b
