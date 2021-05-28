@@ -29,45 +29,61 @@ public class ArticleManagementImpl implements ArticleManagement {
         this.neoDriver = neoDriver;
     }
 
-    @Override
-    public boolean createArticle(Article article) {
-        boolean success = false;
-        if(article.getId() == null) {
+    /**
+     * Opretter artikel i MongoDB.
+     * Article.id vil være opdateret med id fra MongoDB hvis persistering lykkes.
+     * @param article Article object
+     * @return true hvis article persisteres ellers false.
+     */
+    private boolean createMongoArticle(Article article)
+    {
+        if(article.getId() == null)
+        {
             Document doc = new Document("content", article.getContent());
             articles.insertOne(doc);
             String id = doc.get("_id").toString();
-            if(id != null) {
+            if (id != null)
+            {
                 article.setId(id);
-                // neo
-                try( Session session = neoDriver.session())
-                {
-                    success = session.writeTransaction(new TransactionWork<Boolean>()
-                    {
-                        @Override
-                        public Boolean execute(Transaction transaction)
-                        {
-                            Result result = transaction.run("CREATE (a: Article) " +
-                                            "SET a.id=$id, a.createdAt=$createdAt, a.summary=$summary, a.rating=$rating RETURN a;",
-                                            parameters("id", article.getId(),
-                                                    "createdAt", article.getCreatedAt().toString(),
-                                                    "summary", article.getSummary(),
-                                                    "rating", article.getRating()));
-
-
-                          return true;
-                        }
-                    });
-                }
-                catch(Exception e)
-                {
-                    // fjern artikel fra mongo
-                    success = false;
-                    deleteMongoArticle(id);
-                }
-
-                return success;
+                return true;
             }
         }
+        return false;
+    }
+
+    @Override
+    public boolean createArticle(Article article)
+    {
+        return createMongoArticle(article) && createNeoArticle(article);
+    }
+
+
+    private boolean createNeoArticle(Article article) {
+
+        if (article != null && article.getId() != null)
+        {
+            try (Session session = neoDriver.session())
+            {
+                return session.writeTransaction(new TransactionWork<Boolean>()
+                {
+                    @Override
+                    public Boolean execute(Transaction transaction)
+                    {
+                        Result result = transaction.run("CREATE (a: Article) " +
+                                        "SET a.id=$id, a.createdAt=$createdAt, a.summary=$summary, a.rating=$rating RETURN a;",
+                                parameters("id", article.getId(),
+                                        "createdAt", article.getCreatedAt().toString(),
+                                        "summary", article.getSummary(),
+                                        "rating", article.getRating()));
+
+
+                        return true;
+                    }
+                });
+            }
+            catch (Exception e) {}
+        }
+
         return false;
     }
 
@@ -80,9 +96,11 @@ public class ArticleManagementImpl implements ArticleManagement {
     private boolean deleteMongoArticle(String id) {
         if(id != null) {
             Article article = getArticle(id);
-            if(article == null) return false;
-            DeleteResult res = articles.deleteOne(eq("_id", new ObjectId(id)));
-            return res.getDeletedCount() == 1;
+            if(article != null)
+            {
+                DeleteResult res = articles.deleteOne(eq("_id", new ObjectId(id)));
+                return res.getDeletedCount() == 1;
+            }
         }
         return false;
     }
