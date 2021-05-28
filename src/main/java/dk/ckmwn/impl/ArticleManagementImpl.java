@@ -10,48 +10,87 @@ import dk.ckmwn.dto.Article;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.neo4j.driver.Driver;
+import org.neo4j.driver.*;
 
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.ne;
 import static com.mongodb.client.model.Updates.combine;
 import static com.mongodb.client.model.Updates.set;
+import static org.neo4j.driver.Values.parameters;
 
 
 public class ArticleManagementImpl implements ArticleManagement {
 
     private MongoCollection<Document> articles;
+    private Driver neoDriver;
 
     public ArticleManagementImpl(MongoCollection<Document> articles, Driver neoDriver) {
         this.articles = articles;
+        this.neoDriver = neoDriver;
     }
 
     @Override
     public boolean createArticle(Article article) {
+        boolean success = false;
         if(article.getId() == null) {
             Document doc = new Document("content", article.getContent());
             articles.insertOne(doc);
             String id = doc.get("_id").toString();
             if(id != null) {
                 article.setId(id);
-                return true;
+                // neo
+                try( Session session = neoDriver.session())
+                {
+                    success = session.writeTransaction(new TransactionWork<Boolean>()
+                    {
+                        @Override
+                        public Boolean execute(Transaction transaction)
+                        {
+                            Result result = transaction.run("CREATE (a: Article) " +
+                                            "SET a.id=$id, a.createdAt=$createdAt, a.summary=$summary, a.rating=$rating RETURN a;",
+                                            parameters("id", article.getId(),
+                                                    "createdAt", article.getCreatedAt().toString(),
+                                                    "summary", article.getSummary(),
+                                                    "rating", article.getRating()));
+
+
+                          return true;
+                        }
+                    });
+                }
+                catch(Exception e)
+                {
+                    // fjern artikel fra mongo
+                    success = false;
+                    deleteMongoArticle(id);
+                }
+
+                return success;
             }
         }
         return false;
     }
 
     @Override
-    public boolean deleteArticle(String id) {
+    public boolean deleteArticle(String id){
+        return deleteMongoArticle(id) && deleteNeoArticle(id);
+    }
+
+
+    private boolean deleteMongoArticle(String id) {
         if(id != null) {
             Article article = getArticle(id);
             if(article == null) return false;
             DeleteResult res = articles.deleteOne(eq("_id", new ObjectId(id)));
-            if(res.getDeletedCount() == 1) {
-                //Neo
-                return true;
-            }
+            return res.getDeletedCount() == 1;
         }
         return false;
     }
+
+   public boolean deleteNeoArticle(String id)
+   {
+       return true;
+   }
 
     @Override
     public Article getArticle(String id) {

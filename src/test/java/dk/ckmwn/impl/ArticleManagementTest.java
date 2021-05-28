@@ -2,6 +2,7 @@ package dk.ckmwn.impl;
 import com.mongodb.client.MongoDatabase;
 import dk.ckmwn.TestBase;
 import dk.ckmwn.dto.Article;
+import dk.ckmwn.dto.Keyword;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -17,13 +18,13 @@ public class ArticleManagementTest extends TestBase {
     public void setupAm() {
         MongoDatabase db = mongoClient.getDatabase("abc");
         db.createCollection("articles");
-        am = new ArticleManagementImpl(db.getCollection("articles"), null);
+        am = new ArticleManagementImpl(db.getCollection("articles"), neoDriver);
     }
 
     @Test
     public void mustCreateArticle() {
         //Arrange
-        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()), new Keyword("hej"));
         //Act
         boolean res = am.createArticle(article);
         //Assert
@@ -34,7 +35,7 @@ public class ArticleManagementTest extends TestBase {
     @Test
     public void mustNotCreateArticleWithId() {
         //Arrange
-        Article article = new Article("kfokdovk","Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        Article article = new Article("kfokdovk","Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()),new Keyword("hej"));
         //Act
         boolean res = am.createArticle(article);
         //Assert
@@ -44,7 +45,7 @@ public class ArticleManagementTest extends TestBase {
     @Test
     public void mustDeleteArticleWithExistingId() {
         //Arrange
-        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()),new Keyword("hej"));
         am.createArticle(article);
         String id = article.getId();
         //Act
@@ -56,7 +57,7 @@ public class ArticleManagementTest extends TestBase {
     @Test
     public void mustGetArticleWithValidId() {
         //Arrange
-        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()),new Keyword("hej"));
         am.createArticle(article);
         String id = article.getId();
         //Act
@@ -69,7 +70,7 @@ public class ArticleManagementTest extends TestBase {
     @Test
     public void mustUpdateArticleWithValidId() {
         //Arrange
-        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()),new Keyword("hej"));
         am.createArticle(article);
         article.setContent("Bla bla bla");
         //Act
@@ -83,7 +84,7 @@ public class ArticleManagementTest extends TestBase {
     @Test
     public void mustNotUpdateArticleWithInvalidId() {
         //Arrange
-        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()),new Keyword("hej"));
 //        The 12-byte ObjectId value consists of:
 //        a 4-byte timestamp value, representing the ObjectId's creation, measured in seconds since the Unix epoch
 //        a 5-byte random value
@@ -98,7 +99,7 @@ public class ArticleManagementTest extends TestBase {
     @Test
     public void mustNotUpdateArticleWithoutId() {
         //Arrange
-        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()),new Keyword("hej"));
         //Act
         boolean res = am.updateArticle(article);
         //Assert

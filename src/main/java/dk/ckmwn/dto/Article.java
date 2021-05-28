@@ -9,19 +9,33 @@ public class Article {
     private double rating;
     private Date createdAt;
 
-    public Article(String id, String content, String summary, double rating, Date createdAt) {
+    public Keyword getKeyword()
+    {
+        return keyword;
+    }
+
+    public void setKeyword(Keyword keyword)
+    {
+        this.keyword = keyword;
+    }
+
+    private Keyword keyword;
+
+    public Article(String id, String content, String summary, double rating, Date createdAt, Keyword keyword) {
         this.id = id;
         this.content = content;
         this.summary = summary;
         this.rating = rating;
         this.createdAt = createdAt;
+        this.keyword = keyword;
     }
 
-    public Article(String content, String summary, double rating, Date createdAt) {
+    public Article(String content, String summary, double rating, Date createdAt, Keyword keyword) {
         this.content = content;
         this.summary = summary;
         this.rating = rating;
         this.createdAt = createdAt;
+        this.keyword = keyword;
     }
 
     public Article(String id, String content) {

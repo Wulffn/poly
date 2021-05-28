@@ -15,6 +15,8 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -39,14 +41,16 @@ public class TestBase {
         neoContainer = new GenericContainer(DockerImageName.parse("neo4j:enterprise"))
                 .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
                 .withEnv("NEO4JLABS_PLUGINS", "[\"graph-data-science\"]")
-                .withExposedPorts(neoPort);
+                .withEnv("NEO4J_AUTH", "none")
+                .withExposedPorts(neoPort)
+        .withStartupTimeout(Duration.ofMinutes(10L));
 
         mongoContainer.start();
-        //neoContainer.start();
+        neoContainer.start();
         mongoHost = mongoContainer.getHost();
         mongoPort = mongoContainer.getFirstMappedPort();
-//        neoHost = neoContainer.getHost();
-//        neoPort = neoContainer.getFirstMappedPort();
+        neoHost = neoContainer.getHost();
+        neoPort = neoContainer.getMappedPort(7687);
     }
 
     @BeforeAll
@@ -66,7 +70,7 @@ public class TestBase {
         */
         setupContainer();
         mongoClient = new MongoClient(mongoHost, mongoPort);
-        //neoDriver = GraphDatabase.driver("bolt://"+neoHost+":"+neoPort, AuthTokens.basic("neo4j", "neo4j"));
+        neoDriver = GraphDatabase.driver("bolt://"+neoHost+":"+neoPort, AuthTokens.basic("neo4j", "neo4j"));
 //        MongoDatabase db = mongoClient.getDatabase("abc");
 //        db.createCollection("articles");
 //        am = new ArticleManagementImpl(db.getCollection("articles"), null);
