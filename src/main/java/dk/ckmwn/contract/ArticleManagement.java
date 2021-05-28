@@ -8,6 +8,6 @@ public interface ArticleManagement {
     boolean createArticle(Article article);
     boolean deleteArticle(String id);
     Article getArticle(String id);
-    Article updateArticle(Article article);
+    boolean updateArticle(Article article);
 
 }

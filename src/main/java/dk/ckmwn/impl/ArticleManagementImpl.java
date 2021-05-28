@@ -4,6 +4,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import dk.ckmwn.contract.ArticleManagement;
 import dk.ckmwn.dto.Article;
 import org.bson.BsonDocument;
@@ -12,6 +13,9 @@ import org.bson.types.ObjectId;
 import org.neo4j.driver.Driver;
 
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.combine;
+import static com.mongodb.client.model.Updates.set;
+
 
 public class ArticleManagementImpl implements ArticleManagement {
 
@@ -61,7 +65,19 @@ public class ArticleManagementImpl implements ArticleManagement {
     }
 
     @Override
-    public Article updateArticle(Article article) {
-        return null;
+    public boolean updateArticle(Article article) {
+        if(article.getId() != null) {
+            Document document = articles.find(eq("_id", new ObjectId(article.getId()))).first();
+            if(document != null) {
+                Article persistedArticle = Article.fromDoc(document);
+                if (!article.getContent().equals(persistedArticle.getContent())) {
+                    UpdateResult ur = articles.updateOne(eq("_id", new ObjectId(article.getId())), combine(set("content", article.getContent())));
+                    if (ur.getModifiedCount() == 0) return false;
+                }
+                //neo
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -66,5 +66,44 @@ public class ArticleManagementTest extends TestBase {
         assertEquals(res.getContent(), article.getContent());
     }
 
+    @Test
+    public void mustUpdateArticleWithValidId() {
+        //Arrange
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        am.createArticle(article);
+        article.setContent("Bla bla bla");
+        //Act
+        boolean res = am.updateArticle(article);
+        Article persistedArticle = am.getArticle(article.getId());
+        //Assert
+        assertTrue(res);
+        assertEquals(persistedArticle.getContent(), article.getContent());
+    }
+
+    @Test
+    public void mustNotUpdateArticleWithInvalidId() {
+        //Arrange
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+//        The 12-byte ObjectId value consists of:
+//        a 4-byte timestamp value, representing the ObjectId's creation, measured in seconds since the Unix epoch
+//        a 5-byte random value
+//        a 3-byte incrementing counter, initialized to a random value
+        article.setId("507f1f77bcf86cd799439011");
+        //Act
+        boolean res = am.updateArticle(article);
+        //Assert
+        assertFalse(res);
+    }
+
+    @Test
+    public void mustNotUpdateArticleWithoutId() {
+        //Arrange
+        Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()));
+        //Act
+        boolean res = am.updateArticle(article);
+        //Assert
+        assertFalse(res);
+    }
+
 
 }
