@@ -7,7 +7,7 @@ public interface StockManagement {
     boolean createStock(Stock stock);
     boolean deleteStock(Stock stock);
     Stock getStock(String symbol);
-    Stock updateStock(Stock stock);
+    boolean updateStock(String fromSymbol, String toSymbol);
 
 
 }

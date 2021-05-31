@@ -7,4 +7,12 @@ public class Stock {
     public Stock(String symbol) {
         this.symbol = symbol;
     }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
 }

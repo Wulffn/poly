@@ -12,6 +12,8 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
 
+import java.util.Map;
+
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.ne;
 import static com.mongodb.client.model.Updates.combine;
@@ -32,18 +34,16 @@ public class ArticleManagementImpl implements ArticleManagement {
     /**
      * Opretter artikel i MongoDB.
      * Article.id vil være opdateret med id fra MongoDB hvis persistering lykkes.
+     *
      * @param article Article object
      * @return true hvis article persisteres ellers false.
      */
-    private boolean createMongoArticle(Article article)
-    {
-        if(article.getId() == null)
-        {
+    private boolean createMongoArticle(Article article) {
+        if (article.getId() == null) {
             Document doc = new Document("content", article.getContent());
             articles.insertOne(doc);
             String id = doc.get("_id").toString();
-            if (id != null)
-            {
+            if (id != null) {
                 article.setId(id);
                 return true;
             }
@@ -52,23 +52,23 @@ public class ArticleManagementImpl implements ArticleManagement {
     }
 
     @Override
-    public boolean createArticle(Article article)
-    {
+    public boolean createArticle(Article article) {
         return createMongoArticle(article) && createNeoArticle(article);
     }
 
-
+    /**
+     * Opretter artikel i Neo4j.
+     * Article vil have samme id som i MongoDB.
+     *
+     * @param article Article object
+     * @return true hvis article persisteres ellers false.
+     */
     private boolean createNeoArticle(Article article) {
-
-        if (article != null && article.getId() != null)
-        {
-            try (Session session = neoDriver.session())
-            {
-                return session.writeTransaction(new TransactionWork<Boolean>()
-                {
+        if (article != null && article.getId() != null) {
+            try (Session session = neoDriver.session()) {
+                return session.writeTransaction(new TransactionWork<Boolean>() {
                     @Override
-                    public Boolean execute(Transaction transaction)
-                    {
+                    public Boolean execute(Transaction transaction) {
                         Result result = transaction.run("CREATE (a: Article) " +
                                         "SET a.id=$id, a.createdAt=$createdAt, a.summary=$summary, a.rating=$rating RETURN a;",
                                 parameters("id", article.getId(),
@@ -80,24 +80,29 @@ public class ArticleManagementImpl implements ArticleManagement {
                         return true;
                     }
                 });
+            } catch (Exception e) {
             }
-            catch (Exception e) {}
         }
 
         return false;
     }
 
     @Override
-    public boolean deleteArticle(String id){
+    public boolean deleteArticle(String id) {
         return deleteMongoArticle(id) && deleteNeoArticle(id);
     }
 
-
+    /**
+     * Fjerner artikel i MongoDB.
+     *
+     *
+     * @param id String
+     * @return true hvis article fjernes ellers false.
+     */
     private boolean deleteMongoArticle(String id) {
-        if(id != null) {
+        if (id != null) {
             Article article = getArticle(id);
-            if(article != null)
-            {
+            if (article != null) {
                 DeleteResult res = articles.deleteOne(eq("_id", new ObjectId(id)));
                 return res.getDeletedCount() == 1;
             }
@@ -105,33 +110,94 @@ public class ArticleManagementImpl implements ArticleManagement {
         return false;
     }
 
-   public boolean deleteNeoArticle(String id)
-   {
-       return true;
-   }
+    /**
+     * Fjerner artikel i Neo4j.
+     *
+     *
+     * @param id String
+     * @return true hvis article fjernes ellers false.
+     */
+    public boolean deleteNeoArticle(String id) {
+        try (Session session = neoDriver.session()) {
+            return session.writeTransaction(new TransactionWork<Boolean>() {
+                @Override
+                public Boolean execute(Transaction transaction) {
+                    Result result = transaction.run("MATCH (n:Article) where n.id = $id DELETE n",
+                            parameters("id", id));
+                    return true;
+                }
+            });
+        } catch (Exception e) {
+        }
+        return false;
+    }
 
+
+    /**
+     * Henter artikel i MongoDB samt Neo4j og samler et objekt.
+     *
+     *
+     * @param id String
+     * @return Article hvis article findes ellers null
+     */
     @Override
     public Article getArticle(String id) {
-        if(id != null) {
+        if (id != null) {
             Document document = articles.find(eq("_id", new ObjectId(id))).first();
-            Article article = Article.fromDoc(document);
-            //return Article.fromDoc(articles.find(eq("_id", id)).first());
-            return article;
+            if (!document.isEmpty()) {
+                Article article = Article.fromDoc(document);
+                try (Session session = neoDriver.session()) {
+                    return session.writeTransaction(new TransactionWork<Article>() {
+                        @Override
+                        public Article execute(Transaction transaction) {
+                            Result result = transaction.run("MATCH (n:Article) where n.id = $id' return n",
+                                    parameters("id", article.getId()));
+                            Map<String, Object> map = result.single().asMap();
+                            article.setSummary(map.get("summary").toString());
+                            article.setRating(Double.valueOf(map.get("rating").toString()));
+                            return article;
+                        }
+                    });
+                } catch (Exception e) {
+                    return null;
+                }
+            }
         }
         return null;
     }
 
+
+    /**
+     * Opdaterer artikel i MongoDB samt Neo4j.
+     *
+     *
+     * @param article Article
+     * @return true hvis article opdateres ellers false
+     */
     @Override
     public boolean updateArticle(Article article) {
-        if(article.getId() != null) {
+        if (article.getId() != null) {
             Document document = articles.find(eq("_id", new ObjectId(article.getId()))).first();
-            if(document != null) {
+            if (document != null) {
                 Article persistedArticle = Article.fromDoc(document);
                 if (!article.getContent().equals(persistedArticle.getContent())) {
                     UpdateResult ur = articles.updateOne(eq("_id", new ObjectId(article.getId())), combine(set("content", article.getContent())));
                     if (ur.getModifiedCount() == 0) return false;
                 }
-                //neo
+                try (Session session = neoDriver.session()) {
+                    return session.writeTransaction(new TransactionWork<Boolean>() {
+                        @Override
+                        public Boolean execute(Transaction transaction) {
+                            Result result = transaction.run("MATCH (a: Article) WHERE a.id = $id " +
+                                            "SET a.summary=$summary, a.rating=$rating RETURN a;",
+                                    parameters("id", article.getId(),
+                                            "summary", article.getSummary(),
+                                            "rating", article.getRating()));
+                            return true;
+                        }
+                    });
+                } catch (Exception e) {
+                }
                 return true;
             }
         }

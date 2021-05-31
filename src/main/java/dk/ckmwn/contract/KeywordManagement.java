@@ -11,7 +11,7 @@ public interface KeywordManagement {
     boolean deleteKeyword(Keyword keyword);
     Keyword getKeyword(String text);
     boolean addKeywordToStock(Keyword keyword, Stock stock);
-    boolean removeKeywordToStock(Keyword keyword, Stock stock);
+    boolean removeKeywordFromStock(Keyword keyword, Stock stock);
     Collection<Keyword> suggestKeywordsForStock(Stock stock, int width);
 
 }

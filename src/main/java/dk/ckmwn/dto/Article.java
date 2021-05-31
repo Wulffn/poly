@@ -3,6 +3,7 @@ package dk.ckmwn.dto;
 import org.bson.Document;
 
 import java.util.Date;
+import java.util.Map;
 
 public class Article {
     private String id, content, summary;
@@ -41,6 +42,9 @@ public class Article {
     public Article(String id, String content) {
         this.id = id;
         this.content = content;
+    }
+
+    public Article() {
     }
 
     public static Article fromDoc(Document doc) {
