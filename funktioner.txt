@@ -1,0 +1,6 @@
+Funktioner i db klient
+1. createStock - putter aktie ind i neo og i postgres.
+2. addKeywordToStock - opretter keyword i neo4j og etablerer relation mellem dette og en given aktie.
+3. removeKeywordFromStock - fjerner keyword og relation i neo4j
+4. CRUD artikel til mongo
+5. suggestKeywordsForStock - løber i x led gennem neo4j og samler keywords til klient.

@@ -1,0 +1,50 @@
+@startuml
+
+title "Messages - Sequence Diagram"
+
+actor User
+boundary "Controller" as ctrl
+note right of ctrl: Skal laves
+control "KeywordController" as kCtrl
+note right of kCtrl: Der findes apply_keyword i "UserController"
+control "StockController" as sCtrl
+control "UserController" as uCtrl
+note right of uCtrl: Der findes add_keyword i "KeywordController"
+control "ArticleController" as aCtrl
+
+control "KeywordManagement" as km
+control "ArticleManagement" as am
+
+control "DataFacade" as df
+control "UserService" as us
+control "StockService" as ss
+control "KeywordService" as ks
+
+database postgres
+database mongodb
+database neo4j
+
+
+User -> ctrl : Add user
+ctrl -> uCtrl : addUser(UserCreation userCreation)
+uCtrl -> df : addUser(UserCreation userCreation)
+df -> us : addUser(UserCreation userCreation)
+us -> postgres : call add_user(name, password, email)
+
+User -> ctrl : Apply keyword to user
+ctrl -> uCtrl : applyKeyword(UserKeywordCreation userKeywordCreation)
+uCtrl -> df : applyKeyword(UserKeywordCreation userKeywordCreation)
+df -> us : addKeyword(UserKeywordCreation userKeywordCreation)
+us -> postgres : call apply_keyword(email, keyword)
+df -> km : addKeywordToStock(keyword, stock)
+km -> neo4j : add keyword to graph.
+
+User -> ctrl : Add article
+ctrl -> df : addArticle(Article article)
+df -> am : createArticle(Article article)
+am -> am : createMongoArticle(Article article)
+am -> mongodb : add article to mongo
+am -> am : create neo4jArticle(Article article)
+am -> neo4j : add article to neo4j
+
+@enduml
