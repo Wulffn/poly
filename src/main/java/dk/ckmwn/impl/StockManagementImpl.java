@@ -1,6 +1,7 @@
 package dk.ckmwn.impl;
 
 import dk.ckmwn.contract.StockManagement;
+import dk.ckmwn.dto.Keyword;
 import dk.ckmwn.dto.Stock;
 import org.neo4j.driver.*;
 import static org.neo4j.driver.Values.parameters;
@@ -15,7 +16,7 @@ public class StockManagementImpl implements StockManagement {
 
     @Override
     public boolean createStock(Stock stock) {
-        if (stock != null && stock.getSymbol() != null) {
+        if (stock != null && stock.getSymbol() != null && !stock.getSymbol().equals("")) {
             try (Session session = neoDriver.session()) {
                 return session.writeTransaction(new TransactionWork<Boolean>() {
                     @Override
@@ -52,16 +53,16 @@ public class StockManagementImpl implements StockManagement {
 
     @Override
     public Stock getStock(String symbol) {
-        if (symbol != null) {
+        if (symbol != null && !symbol.equals("")) {
             try (Session session = neoDriver.session()) {
-                return session.writeTransaction(new TransactionWork<Stock>() {
+                return new Stock(session.writeTransaction(new TransactionWork<String>() {
                     @Override
-                    public Stock execute(Transaction transaction) {
-                        Result result = transaction.run("MATCH (s: Stock) WHERE s.symbol = $symbol RETURN s;",
+                    public String execute(Transaction transaction) {
+                        Result result = transaction.run("MATCH (s:Stock {symbol: $symbol}) RETURN s.symbol;",
                                 parameters("symbol", symbol));
-                        return new Stock(result.single().get("symbol").asString());
+                        return result.single().get(0).asString();
                     }
-                });
+                }));
             } catch (Exception e) {
             }
         }

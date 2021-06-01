@@ -25,9 +25,9 @@ public class KeywordManagementImpl implements KeywordManagement {
                 return session.writeTransaction(new TransactionWork<Boolean>() {
                     @Override
                     public Boolean execute(Transaction transaction) {
-                        Result result = transaction.run("CREATE (k: Keyword) " +
+                        Result result = transaction.run("CREATE (k:Keyword) " +
                                         "SET k.text=$text RETURN k;",
-                                parameters("id", keyword.getText()));
+                                parameters("text", keyword.getText()));
                         return true;
                     }
                 });
@@ -44,7 +44,7 @@ public class KeywordManagementImpl implements KeywordManagement {
                 return session.writeTransaction(new TransactionWork<Boolean>() {
                     @Override
                     public Boolean execute(Transaction transaction) {
-                        Result result = transaction.run("MATCH (k: Keyword) WHERE k.text = $text DELETE k;",
+                        Result result = transaction.run("MATCH (k:Keyword) WHERE k.text = $text DELETE k;",
                                 parameters("text", keyword.getText()));
                         return true;
                     }
@@ -59,15 +59,17 @@ public class KeywordManagementImpl implements KeywordManagement {
     public Keyword getKeyword(String text) {
         if (text != null) {
             try (Session session = neoDriver.session()) {
-                return session.writeTransaction(new TransactionWork<Keyword>() {
+                return new Keyword(session.writeTransaction(new TransactionWork<String>() {
                     @Override
-                    public Keyword execute(Transaction transaction) {
-                        Result result = transaction.run("MATCH (k:Keyword) WHERE k.text = $text RETURN k;",
+                    public String execute(Transaction transaction) {
+                        Result result = transaction.run("MATCH (k:Keyword {text: $text}) RETURN k.text;",
                                 parameters("text", text));
-                        return new Keyword(result.single().get("text").asString());
+                        return result.single().get(0).asString();
+
                     }
-                });
+                }));
             } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
         }
         return null;

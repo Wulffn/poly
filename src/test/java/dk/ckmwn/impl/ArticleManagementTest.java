@@ -73,12 +73,14 @@ public class ArticleManagementTest extends TestBase {
         Article article = new Article("Bla bla", "Bla", 0.87, new Date(System.currentTimeMillis()),new Keyword("hej"));
         am.createArticle(article);
         article.setContent("Bla bla bla");
+        article.setRating(0.2);
         //Act
         boolean res = am.updateArticle(article);
         Article persistedArticle = am.getArticle(article.getId());
         //Assert
         assertTrue(res);
         assertEquals(persistedArticle.getContent(), article.getContent());
+        assertEquals(persistedArticle.getRating(), article.getRating());
     }
 
     @Test

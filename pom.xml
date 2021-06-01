@@ -7,7 +7,7 @@
     <groupId>dk.ckmwn</groupId>
     <artifactId>DBPolyglot</artifactId>
     <version>1.0</version>
-
+    <packaging>jar</packaging>
     <properties>
         <maven.compiler.source>15</maven.compiler.source>
         <maven.compiler.target>15</maven.compiler.target>

@@ -1,5 +1,6 @@
 package dk.ckmwn.impl;
 
+import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import dk.ckmwn.contract.ArticleManagement;
 import dk.ckmwn.contract.KeywordManagement;
@@ -9,7 +10,9 @@ import dk.ckmwn.dto.Article;
 import dk.ckmwn.dto.Keyword;
 import dk.ckmwn.dto.Stock;
 import org.bson.Document;
+import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
 
 import java.util.Collection;
 
@@ -19,12 +22,17 @@ public class StorageManagementImpl implements StorageManagement {
     private KeywordManagement km;
     private StockManagement sm;
 
-    public StorageManagementImpl(MongoCollection<Document> articles, Driver neoDriver) {
+    public StorageManagementImpl() {
+        //Bør måske fjernes herfra?
+        MongoClient mongoClient = new MongoClient("localhost", 27017);
+        Driver neoDriver = GraphDatabase.driver("bolt://localhost:7474", AuthTokens.basic("neo4j", "neo4j"));
+        MongoCollection<Document> articles = mongoClient.getDatabase("abc").getCollection("articles");
         this.am = new ArticleManagementImpl(articles, neoDriver);
         this.km = new KeywordManagementImpl(neoDriver);
         this.sm = new StockManagementImpl(neoDriver);
     }
 
+    //Færdig
     @Override
     public boolean createStock(Stock stock) {
         return sm.createStock(stock);
@@ -39,17 +47,19 @@ public class StorageManagementImpl implements StorageManagement {
     public boolean removeKeywordFromStock(Stock stock, Keyword keyword) {
         return km.removeKeywordFromStock(keyword, stock);
     }
-
+    //Mangler
     @Override
     public Collection<Keyword> suggestKeywordsForStock(Stock stock, int width) {
         return null;
     }
 
+    //Færdig
     @Override
     public boolean createArticle(Article article) {
         return am.createArticle(article);
     }
 
+    //Færdig
     @Override
     public Article getArticle(String id) {
         return am.getArticle(id);
