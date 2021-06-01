@@ -150,15 +150,17 @@ public class ArticleManagementImpl implements ArticleManagement {
                     return session.writeTransaction(new TransactionWork<Article>() {
                         @Override
                         public Article execute(Transaction transaction) {
-                            Result result = transaction.run("MATCH (n:Article) where n.id = $id' return n",
+                            Result result = transaction.run("MATCH (n:Article) where n.id = $id return n",
                                     parameters("id", article.getId()));
-                            Map<String, Object> map = result.single().asMap();
-                            article.setSummary(map.get("summary").toString());
-                            article.setRating(Double.valueOf(map.get("rating").toString()));
+                            var fields = result.single().fields().get(0);
+                            article.setSummary(fields.value().asNode().get("summary").asString());
+                            article.setRating(fields.value().asNode().get("rating").asDouble());
+
                             return article;
                         }
                     });
                 } catch (Exception e) {
+                    System.out.println(e.getMessage());
                     return null;
                 }
             }
